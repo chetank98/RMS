@@ -52,21 +52,20 @@ func SetupRoutes() *Server {
 			admin.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
 		})
 
-		r.Route("/subadmin", func(subadmin chi.Router) {
-			subadmin.Use(middlewares.Authenticate)
-			subadmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
-			subadmin.Post("/create-user", handlers.CreateUser)
-			subadmin.Get("/get-all-user", handlers.GetAllUsersBySubAdmin)
-			subadmin.Post("/create-restaurant", handlers.CreateRestaurant)
-			subadmin.Get("/get-all-restaurant", handlers.GetAllRestaurantsBySubAdmin)
-			subadmin.Post("/create-dish", handlers.CreateDish)
-			subadmin.Get("/get-all-dish", handlers.GetAllDishesBySubAdmin)
-			subadmin.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
+		r.Route("/sub-admin", func(subAdmin chi.Router) {
+			subAdmin.Use(middlewares.Authenticate)
+			subAdmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
+			subAdmin.Post("/create-user", handlers.CreateUser)
+			subAdmin.Get("/get-all-user", handlers.GetAllUsersBySubAdmin)
+			subAdmin.Post("/create-restaurant", handlers.CreateRestaurant)
+			subAdmin.Get("/get-all-restaurant", handlers.GetAllRestaurantsBySubAdmin)
+			subAdmin.Post("/create-dish", handlers.CreateDish)
+			subAdmin.Get("/get-all-dish", handlers.GetAllDishesBySubAdmin)
+			subAdmin.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
 		})
 
 		r.Route("/user", func(user chi.Router) {
 			user.Use(middlewares.Authenticate)
-			user.Use(middlewares.ShouldHaveRole(models.RoleUser))
 			user.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
 			user.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
 		})

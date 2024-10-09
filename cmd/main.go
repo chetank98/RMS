@@ -21,11 +21,11 @@ func main() {
 	srv := server.SetupRoutes()
 
 	if err := database.ConnectAndMigrate(
-		os.Getenv(""),
-		os.Getenv("PORT"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
 		os.Getenv("DB_NAME"),
-		os.Getenv("USER_NAME"),
-		os.Getenv("PASSWORD"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASS"),
 		database.SSLModeDisable); err != nil {
 		logrus.Panicf("Failed to initialize and migrate database with error: %+v", err)
 	}

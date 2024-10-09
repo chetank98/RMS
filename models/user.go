@@ -13,38 +13,41 @@ func (r Role) IsValid() bool {
 }
 
 type RegisterUserRequest struct {
-	Name      string `json:"name" db:"name"`
-	Email     string `json:"email" db:"email"`
-	Password  string `json:"password" db:"password"`
-	Address   string `json:"address" db:"address"`
-	Role      Role   `json:"role" db:"role"`
-	CreatedBy string `json:"createdBy" db:"created_by"`
+	Name     string           `json:"name" validate:"required"`
+	Email    string           `json:"email" validate:"email"`
+	Password string           `json:"password" validate:"gte=6,lte=15"`
+	Role     []Role           `json:"role" validate:"required"`
+	Address  []AddressRequest `json:"address" validate:"required"`
 }
 
-type LoginUser struct {
-	Email    string `json:"email" db:"email"`
-	Password string `json:"password" db:"password"`
+type AddressRequest struct {
+	Address   string `json:"address" validate:"required"`
+	Latitude  string `json:"latitude" validate:"required"`
+	Longitude string `json:"longitude" validate:"required"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"email"`
+	Password string `json:"password" validate:"gte=6,lte=15"`
+}
+
+type Address struct {
+	ID        string `json:"id" validate:"id"`
+	Address   string `json:"address" db:"address"`
+	Latitude  string `json:"latitude" db:"latitude"`
+	Longitude string `json:"longitude" db:"longitude"`
 }
 
 type User struct {
-	Id      string `json:"id" db:"id"`
-	Name    string `json:"name" db:"name"`
-	Email   string `json:"email" db:"email"`
-	Address string `json:"address" db:"address"`
-	Role    Role   `json:"role" db:"role"`
+	ID      string    `json:"id" db:"id"`
+	Name    string    `json:"name" db:"name"`
+	Email   string    `json:"email" db:"email"`
+	Address []Address `json:"address" db:"address"`
+	Role    []Role    `json:"role" db:"role"`
 }
 
 type UserCtx struct {
-	UserId    string `json:"userId" db:"user_id"`
-	SessionId string `json:"sessionId" db:"session_id"`
-	Role      Role   `json:"role" db:"role"`
-	Name      string `json:"name" db:"name"`
-	Email     string `json:"email" db:"email"`
-}
-
-type UserInfo struct {
-	Id       string `json:"id" db:"id"`
-	Name     string `json:"name" db:"name"`
-	Password string `json:"password" db:"password"`
-	Role     Role   `json:"role" db:"role"`
+	UserID    string `json:"userId"`
+	SessionID string `json:"sessionId"`
+	Role      []Role `json:"role"`
 }
