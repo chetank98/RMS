@@ -8,22 +8,17 @@ const (
 	RoleUser     Role = "user"
 )
 
-func (r Role) IsValid() bool {
-	return r == RoleAdmin || r == RoleSubAdmin || r == RoleUser
-}
-
-type RegisterUserRequest struct {
+type UserRequest struct {
 	Name     string           `json:"name" validate:"required"`
 	Email    string           `json:"email" validate:"email"`
 	Password string           `json:"password" validate:"gte=6,lte=15"`
-	Role     []Role           `json:"role" validate:"required"`
 	Address  []AddressRequest `json:"address" validate:"required"`
 }
 
 type AddressRequest struct {
-	Address   string `json:"address" validate:"required"`
-	Latitude  string `json:"latitude" validate:"required"`
-	Longitude string `json:"longitude" validate:"required"`
+	Address   string  `json:"address" validate:"required"`
+	Latitude  float64 `json:"latitude" validate:"required"`
+	Longitude float64 `json:"longitude" validate:"required"`
 }
 
 type LoginRequest struct {
@@ -31,11 +26,17 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"gte=6,lte=15"`
 }
 
+type LoginData struct {
+	ID           string `db:"id"`
+	PasswordHash string `db:"password"`
+	Role         Role   `db:"role"`
+}
+
 type Address struct {
-	ID        string `json:"id" validate:"id"`
-	Address   string `json:"address" db:"address"`
-	Latitude  string `json:"latitude" db:"latitude"`
-	Longitude string `json:"longitude" db:"longitude"`
+	ID        string  `json:"id" db:"id"`
+	Address   string  `json:"address" db:"address"`
+	Latitude  float64 `json:"latitude" db:"latitude"`
+	Longitude float64 `json:"longitude" db:"longitude"`
 }
 
 type User struct {
@@ -43,11 +44,11 @@ type User struct {
 	Name    string    `json:"name" db:"name"`
 	Email   string    `json:"email" db:"email"`
 	Address []Address `json:"address" db:"address"`
-	Role    []Role    `json:"role" db:"role"`
+	Role    Role      `json:"role" db:"role"`
 }
 
 type UserCtx struct {
 	UserID    string `json:"userId"`
 	SessionID string `json:"sessionId"`
-	Role      []Role `json:"role"`
+	Role      Role   `json:"role"`
 }

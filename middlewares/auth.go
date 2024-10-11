@@ -58,7 +58,7 @@ func Authenticate(next http.Handler) http.Handler {
 		user := &models.UserCtx{
 			UserID:    claimValues["userId"].(string),
 			SessionID: sessionID,
-			Role:      claimValues["role"].(models.Role),
+			Role:      models.Role(claimValues["role"].(string)),
 		}
 
 		ctx := context.WithValue(r.Context(), userContext, user)

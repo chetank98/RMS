@@ -9,160 +9,129 @@ import (
 )
 
 func IsUserExists(email string) (bool, error) {
-	query := `
-				SELECT count(id) > 0 as is_exist
-				FROM users
-				WHERE email = TRIM($1)
-				  AND archived_at IS NULL;
-			`
+	SQL := `SELECT count(id) > 0 as is_exist
+			  FROM users
+			  WHERE email = TRIM($1)
+			    AND archived_at IS NULL`
+
 	var check bool
-	chkErr := database.RMS.Get(&check, query, email)
-	if chkErr != nil {
-		return false, chkErr // Return error if the query fails
-	}
-	return check, nil
+	chkErr := database.RMS.Get(&check, SQL, email)
+	return check, chkErr
 }
 
-func GetUserInfo(email, password string) (*models.UserInfo, error) {
-	query := `
-				SELECT u.id,
-					   u.name,
-					   u.password,
-					   ur.role
-				FROM users u
-						 INNER JOIN user_roles ur
-									ON u.id = ur.user_id
-				WHERE u.archived_at IS NULL
-				  AND u.email = TRIM($1);
-			`
-	var userInfo models.UserInfo
-	getErr := database.RMS.Get(&userInfo, query, email)
+func CreateUser(tx *sqlx.Tx, name, email, password, createdBy string, role models.Role) (string, error) {
+	SQL := `INSERT INTO users (name, email, password, created_by, role)
+			  VALUES (TRIM($1), TRIM($2), $3, $4, $5) RETURNING id`
 
-	if getErr != nil {
-		return nil, getErr
-	}
-
-	if passwordErr := utils.CheckPassword(password, userInfo.Password); passwordErr != nil {
-		return nil, passwordErr
-	}
-	return &userInfo, nil
+	var userID string
+	crtErr := tx.Get(&userID, SQL, name, email, password, createdBy, role)
+	return userID, crtErr
 }
 
-func CreateUserSession(userId string) (string, error) {
-	query := `
-				INSERT INTO user_session(user_id)
-				VALUES ($1)
-				RETURNING id;
-			`
-	var sessionId string
-	crtErr := database.RMS.QueryRowx(query, userId).Scan(&sessionId)
-	if crtErr != nil {
-		return "", crtErr // Return error if the query fails
-	}
-	return sessionId, nil
-}
+func CreateUserAddress(tx *sqlx.Tx, userID string, addresses []models.AddressRequest) error {
+	SQL := `INSERT INTO address (user_id, address, latitude, longitude) VALUES`
 
-func CreateUser(db sqlx.Ext, name, email, password, createdBy string) (string, error) {
-	query := `
-				INSERT INTO users (name, email, password, created_by)
-				VALUES (TRIM($1), TRIM($2), $3, $4)
-				RETURNING id;
-			`
-	var userId string
-	err := db.QueryRowx(query, name, email, password, createdBy).Scan(&userId)
-	if err != nil {
-		return "", err // Return error if the query fails
+	values := make([]interface{}, 0)
+	for i := range addresses {
+		values = append(values,
+			userID,
+			addresses[i].Address,
+			addresses[i].Latitude,
+			addresses[i].Longitude,
+		)
 	}
-	return userId, nil
-}
+	SQL = utils.SetupBindVars(SQL, "(?, ?, ?, ?)", len(addresses))
 
-func CreateUserRole(db sqlx.Ext, userId string, role models.Role) error {
-	query := `
-				INSERT INTO user_roles(user_id, role)
-				VALUES ($1, $2);
-			`
-	_, err := db.Exec(query, userId, role)
+	_, err := tx.Exec(SQL, values...)
 	return err
 }
 
-func CreateUserAddress(db sqlx.Ext, userId, address string) error {
-	query := `
-				INSERT INTO address(user_id, address)
-				VALUES ($1, TRIM($2));
-			`
-	_, err := db.Exec(query, userId, address)
-	return err
+func CreateUserSession(userID string) (string, error) {
+	var sessionID string
+	SQL := `INSERT INTO user_session(user_id) 
+              VALUES ($1) RETURNING id`
+	crtErr := database.RMS.Get(&sessionID, SQL, userID)
+	return sessionID, crtErr
 }
 
-func GetArchivedAt(sessionId string) (*time.Time, error) {
-	query := `
-				SELECT archived_at
-				FROM user_session
-				WHERE id = $1
-				  AND archived_at IS NULL;
-			`
+func GetUserInfo(body models.LoginRequest) (string, models.Role, error) {
+	SQL := `SELECT u.id,
+       			   u.role,
+       			   u.password
+			  FROM users u
+			  WHERE u.email = TRIM($1)
+			    AND u.archived_at IS NULL`
+
+	var user models.LoginData
+	if getErr := database.RMS.Get(&user, SQL, body.Email); getErr != nil {
+		return "", "", getErr
+	}
+	if passwordErr := utils.CheckPassword(body.Password, user.PasswordHash); passwordErr != nil {
+		return "", "", passwordErr
+	}
+	return user.ID, user.Role, nil
+}
+
+func GetArchivedAt(sessionID string) (*time.Time, error) {
 	var archivedAt *time.Time
-	getErr := database.RMS.Get(&archivedAt, query, sessionId)
-	if getErr != nil {
-		return nil, getErr // Return error if the query fails
-	}
-	return archivedAt, nil
+
+	SQL := `SELECT archived_at 
+              FROM user_session 
+              WHERE id = $1`
+
+	getErr := database.RMS.Get(&archivedAt, SQL, sessionID)
+	return archivedAt, getErr
 }
 
-func DeleteUserSession(sessionId string) error {
-	query := `
-				UPDATE user_session
-				SET archived_at = NOW()
-				WHERE id = $1
-				  AND archived_at IS NULL;
-			`
+func DeleteUserSession(sessionID string) error {
+	SQL := `UPDATE user_session
+			  SET archived_at = NOW()
+			  WHERE id = $1
+			    AND archived_at IS NULL`
 
-	_, delErr := database.RMS.Exec(query, sessionId)
-	if delErr != nil {
-		return delErr // Return error if the update fails
-	}
-	return nil
+	_, delErr := database.RMS.Exec(SQL, sessionID)
+	return delErr
 }
 
-func GetAllUsersByAdmin() ([]models.User, error) {
-	query := `
-				SELECT u.id,
-					   u.name,
-					   u.email,
-					   a.address,
-					   ur.role
-				FROM users u
-						 INNER JOIN user_roles ur
-									ON u.id = ur.user_id
-						 INNER JOIN address a
-									ON u.id = a.user_id
-				WHERE u.archived_at IS NULL
-				  AND ur.role = 'user';
-			`
-
-	users := make([]models.User, 0)
-	FetchErr := database.RMS.Select(&users, query)
-	return users, FetchErr
-}
-
-func GetAllUsersBySubAdmin(loggedUserId string) ([]models.User, error) {
-	query := `
-				SELECT u.id,
-					   u.name,
-					   u.email,
-					   a.address,
-					   ur.role
-				FROM users u
-						 INNER JOIN user_roles ur
-									ON u.id = ur.user_id
-						 INNER JOIN address a
-									ON u.id = a.user_id
-				WHERE u.archived_at IS NULL
-				  AND u.created_by = $1
-				  AND ur.role = 'user';
-			`
-
-	users := make([]models.User, 0)
-	FetchErr := database.RMS.Select(&users, query, loggedUserId)
-	return users, FetchErr
-}
+//func GetAllUsersByAdmin() ([]models.User, error) {
+//	query := `
+//				SELECT u.id,
+//					   u.name,
+//					   u.email,
+//					   a.address,
+//					   ur.role
+//				FROM users u
+//						 INNER JOIN user_roles ur
+//									ON u.id = ur.user_id
+//						 INNER JOIN address a
+//									ON u.id = a.user_id
+//				WHERE u.archived_at IS NULL
+//				  AND ur.role = 'user';
+//			`
+//
+//	users := make([]models.User, 0)
+//	FetchErr := database.RMS.Select(&users, query)
+//	return users, FetchErr
+//}
+//
+//func GetAllUsersBySubAdmin(loggedUserId string) ([]models.User, error) {
+//	query := `
+//				SELECT u.id,
+//					   u.name,
+//					   u.email,
+//					   a.address,
+//					   ur.role
+//				FROM users u
+//						 INNER JOIN user_roles ur
+//									ON u.id = ur.user_id
+//						 INNER JOIN address a
+//									ON u.id = a.user_id
+//				WHERE u.archived_at IS NULL
+//				  AND u.created_by = $1
+//				  AND ur.role = 'user';
+//			`
+//
+//	users := make([]models.User, 0)
+//	FetchErr := database.RMS.Select(&users, query, loggedUserId)
+//	return users, FetchErr
+//}

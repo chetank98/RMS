@@ -1,9 +1,8 @@
 package models
 
 type CreateDishRequest struct {
-	Name         string `json:"name" validate:"required"`
-	Price        int    `json:"price" validate:"required"`
-	RestaurantId string `json:"restaurantId" db:"restaurant_id"`
+	Name  string `json:"name" validate:"required"`
+	Price int    `json:"price" validate:"required"`
 }
 
 type Dish struct {

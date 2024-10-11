@@ -3,10 +3,11 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS users
 (
     id          UUID PRIMARY KEY         DEFAULT gen_random_uuid(),
-    name        TEXT                       NOT NULL,
-    email       TEXT                       NOT NULL,
-    password    TEXT                       NOT NULL,
-    created_by  UUID REFERENCES users (id) NOT NULL,
+    name        TEXT      NOT NULL,
+    email       TEXT      NOT NULL,
+    password    TEXT      NOT NULL,
+    role        role_type NOT NULL,
+    created_by  UUID REFERENCES users (id),
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     archived_at TIMESTAMP WITH TIME ZONE
 );
@@ -17,15 +18,6 @@ CREATE TYPE role_type AS ENUM (
     'sub-admin',
     'user'
     );
-
-CREATE TABLE IF NOT EXISTS user_roles
-(
-    user_id     UUID REFERENCES users (id) NOT NULL,
-    role        role_type                  NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    archived_at TIMESTAMP WITH TIME ZONE
-);
-CREATE UNIQUE INDEX IF NOT EXISTS unique_role ON user_roles (user_id, role) WHERE archived_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS user_session
 (
@@ -61,7 +53,7 @@ CREATE TABLE IF NOT EXISTS restaurants
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     archived_at TIMESTAMP WITH TIME ZONE
 );
-CREATE UNIQUE INDEX IF NOT EXISTS unique_restaurant ON restaurants (address, name) WHERE archived_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS unique_restaurant ON restaurants (name, address) WHERE archived_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS dishes
 (

@@ -4,7 +4,6 @@ import (
 	"RMS/handlers"
 	"RMS/middlewares"
 	"RMS/models"
-	"RMS/utils"
 	"context"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -27,47 +26,43 @@ func SetupRoutes() *Server {
 
 	router.Use(middlewares.CommonMiddlewares()...)
 
-	router.Route("/v1", func(r chi.Router) {
+	router.Route("/v1", func(v1 chi.Router) {
 
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			utils.RespondJSON(w, http.StatusOK, struct {
-				Status string `json:"status"`
-			}{Status: "server is running"})
-		})
+		v1.Post("/login", handlers.LoginUser)
 
-		r.Post("/login", handlers.LoginUser)
-		r.Post("/logout", handlers.LogoutUser)
+		v1.Group(func(r chi.Router) {
 
-		r.Route("/admin", func(admin chi.Router) {
-			admin.Use(middlewares.Authenticate)
-			admin.Use(middlewares.ShouldHaveRole(models.RoleAdmin))
-			admin.Post("/create-sub-admin", handlers.CreateSubAdmin)
-			admin.Get("/get-all-sub-admin", handlers.GetAllSubAdmins)
-			admin.Post("/create-user", handlers.CreateUser)
-			admin.Get("/get-all-user", handlers.GetAllUsersByAdmin)
-			admin.Post("/create-restaurant", handlers.CreateRestaurant)
-			admin.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
-			admin.Post("/create-dish", handlers.CreateDish)
-			admin.Get("/get-all-dish", handlers.GetAllDishesByAdmin)
-			admin.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
-		})
+			r.Use(middlewares.Authenticate)
 
-		r.Route("/sub-admin", func(subAdmin chi.Router) {
-			subAdmin.Use(middlewares.Authenticate)
-			subAdmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
-			subAdmin.Post("/create-user", handlers.CreateUser)
-			subAdmin.Get("/get-all-user", handlers.GetAllUsersBySubAdmin)
-			subAdmin.Post("/create-restaurant", handlers.CreateRestaurant)
-			subAdmin.Get("/get-all-restaurant", handlers.GetAllRestaurantsBySubAdmin)
-			subAdmin.Post("/create-dish", handlers.CreateDish)
-			subAdmin.Get("/get-all-dish", handlers.GetAllDishesBySubAdmin)
-			subAdmin.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
-		})
+			//r.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
+			r.Post("/logout", handlers.LogoutUser)
 
-		r.Route("/user", func(user chi.Router) {
-			user.Use(middlewares.Authenticate)
-			user.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
-			user.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
+			r.Route("/admin", func(admin chi.Router) {
+				admin.Use(middlewares.ShouldHaveRole(models.RoleAdmin))
+				admin.Post("/create-sub-admin", handlers.CreateSubAdmin)
+				admin.Get("/get-all-sub-admin", handlers.GetAllSubAdmins)
+				admin.Post("/create-user", handlers.CreateUser)
+				//admin.Get("/get-all-user", handlers.GetAllUsersByAdmin)
+				//admin.Post("/create-restaurant", handlers.CreateRestaurant)
+				//admin.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
+				//admin.Post("/create-dish", handlers.CreateDish)
+				//admin.Get("/get-all-dish", handlers.GetAllDishesByAdmin)
+			})
+
+			//r.Route("/sub-admin", func(subAdmin chi.Router) {
+			//	subAdmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
+			//	subAdmin.Post("/create-user", handlers.CreateUser)
+			//	subAdmin.Get("/get-all-user", handlers.GetAllUsersBySubAdmin)
+			//	subAdmin.Post("/create-restaurant", handlers.CreateRestaurant)
+			//	subAdmin.Get("/get-all-restaurant", handlers.GetAllRestaurantsBySubAdmin)
+			//	subAdmin.Post("/create-dish", handlers.CreateDish)
+			//	subAdmin.Get("/get-all-dish", handlers.GetAllDishesBySubAdmin)
+			//})
+
+			//r.Route("/user", func(user chi.Router) {
+			//	user.Use(middlewares.ShouldHaveRole(models.RoleUser))
+			//	user.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
+			//})
 		})
 	})
 

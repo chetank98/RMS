@@ -1,28 +1,29 @@
 package handlers
 
 import (
-	"RMS/database"
 	"RMS/database/dbHelper"
 	"RMS/middlewares"
 	"RMS/models"
 	"RMS/utils"
-	"github.com/jmoiron/sqlx"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 )
 
 func CreateSubAdmin(w http.ResponseWriter, r *http.Request) {
-	var body models.RegisterSubAdminRequest
+	var body models.SubAdminRequest
 
 	userCtx := middlewares.UserContext(r)
-	body.CreatedBy = userCtx.UserId
+	createdBy := userCtx.UserID
+	role := models.RoleSubAdmin
 
 	if parseErr := utils.ParseBody(r.Body, &body); parseErr != nil {
 		utils.RespondError(w, http.StatusBadRequest, parseErr, "failed to parse request body")
 		return
 	}
 
-	if !body.Role.IsValid() {
-		utils.RespondError(w, http.StatusBadRequest, nil, "invalid role type provided")
+	v := validator.New()
+	if err := v.Struct(body); err != nil {
+		utils.RespondError(w, http.StatusBadRequest, err, "input validation failed")
 		return
 	}
 
@@ -31,7 +32,6 @@ func CreateSubAdmin(w http.ResponseWriter, r *http.Request) {
 		utils.RespondError(w, http.StatusInternalServerError, existsErr, "failed to check user existence")
 		return
 	}
-
 	if exists {
 		utils.RespondError(w, http.StatusConflict, nil, "sub-admin already exists")
 		return
@@ -43,20 +43,8 @@ func CreateSubAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txErr := database.Tx(func(tx *sqlx.Tx) error {
-		userID, saveErr := dbHelper.CreateUser(tx, body.Name, body.Email, hashedPassword, body.CreatedBy)
-		if saveErr != nil {
-			utils.RespondError(w, http.StatusInternalServerError, saveErr, "failed to save sub-admin")
-			return saveErr
-		}
-		roleErr := dbHelper.CreateUserRole(tx, userID, body.Role)
-		if roleErr != nil {
-			return roleErr
-		}
-		return nil
-	})
-	if txErr != nil {
-		utils.RespondError(w, http.StatusInternalServerError, txErr, "failed to create sub-admin")
+	if saveErr := dbHelper.CreateSubAdmin(body.Name, body.Email, hashedPassword, createdBy, role); saveErr != nil {
+		utils.RespondError(w, http.StatusInternalServerError, saveErr, "failed to create sub-admin")
 		return
 	}
 
@@ -70,11 +58,6 @@ func GetAllSubAdmins(w http.ResponseWriter, _ *http.Request) {
 
 	if getErr != nil {
 		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get sub-admin")
-		return
-	}
-
-	if len(subAdmins) == 0 {
-		utils.RespondError(w, http.StatusOK, getErr, "no sub-admin found")
 		return
 	}
 
