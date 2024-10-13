@@ -40,29 +40,30 @@ func SetupRoutes() *Server {
 			r.Route("/admin", func(admin chi.Router) {
 				admin.Use(middlewares.ShouldHaveRole(models.RoleAdmin))
 				admin.Post("/create-sub-admin", handlers.CreateSubAdmin)
-				admin.Get("/get-all-sub-admin", handlers.GetAllSubAdmins)
+				admin.Get("/all-sub-admin", handlers.GetAllSubAdmins)
 				admin.Post("/create-user", handlers.CreateUser)
-				//admin.Get("/get-all-user", handlers.GetAllUsersByAdmin)
-				//admin.Post("/create-restaurant", handlers.CreateRestaurant)
-				//admin.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
+				admin.Get("/all-users", handlers.GetAllUsersByAdmin)
+				admin.Post("/create-restaurant", handlers.CreateRestaurant)
+				admin.Get("/all-restaurants", handlers.GetAllRestaurants)
 				//admin.Post("/create-dish", handlers.CreateDish)
-				//admin.Get("/get-all-dish", handlers.GetAllDishesByAdmin)
+				//admin.Get("/all-dishes", handlers.GetAllDishes)
 			})
 
-			//r.Route("/sub-admin", func(subAdmin chi.Router) {
-			//	subAdmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
-			//	subAdmin.Post("/create-user", handlers.CreateUser)
-			//	subAdmin.Get("/get-all-user", handlers.GetAllUsersBySubAdmin)
-			//	subAdmin.Post("/create-restaurant", handlers.CreateRestaurant)
-			//	subAdmin.Get("/get-all-restaurant", handlers.GetAllRestaurantsBySubAdmin)
-			//	subAdmin.Post("/create-dish", handlers.CreateDish)
-			//	subAdmin.Get("/get-all-dish", handlers.GetAllDishesBySubAdmin)
-			//})
+			r.Route("/sub-admin", func(subAdmin chi.Router) {
+				subAdmin.Use(middlewares.ShouldHaveRole(models.RoleSubAdmin))
+				subAdmin.Post("/create-user", handlers.CreateUser)
+				subAdmin.Get("/all-users", handlers.GetAllUsersBySubAdmin)
+				subAdmin.Post("/create-restaurant", handlers.CreateRestaurant)
+				subAdmin.Get("/all-restaurants", handlers.GetAllRestaurantsBySubAdmin)
+				subAdmin.Post("/create-dish", handlers.CreateDish)
+				//subAdmin.Get("/all-dishes", handlers.GetAllDishesBySubAdmin)
+			})
 
-			//r.Route("/user", func(user chi.Router) {
-			//	user.Use(middlewares.ShouldHaveRole(models.RoleUser))
-			//	user.Get("/get-all-restaurant", handlers.GetAllRestaurantsByAdmin)
-			//})
+			r.Route("/user", func(user chi.Router) {
+				user.Use(middlewares.ShouldHaveRole(models.RoleUser))
+				user.Get("/all-restaurants", handlers.GetAllRestaurants)
+				//user.Get("/all-dishes", handlers.GetAllDishes)
+			})
 		})
 	})
 

@@ -101,7 +101,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	utils.RespondJSON(w, http.StatusOK, struct {
 		Message string `json:"message"`
 		Token   string `json:"token"`
-	}{"user login successful", token})
+	}{"login successful", token})
 }
 
 func LogoutUser(w http.ResponseWriter, r *http.Request) {
@@ -118,36 +118,26 @@ func LogoutUser(w http.ResponseWriter, r *http.Request) {
 	}{"logout successful"})
 }
 
-//func GetAllUsersByAdmin(w http.ResponseWriter, _ *http.Request) {
-//	users, getErr := dbHelper.GetAllUsersByAdmin()
-//
-//	if getErr != nil {
-//		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get users")
-//		return
-//	}
-//
-//	if len(users) == 0 {
-//		utils.RespondError(w, http.StatusOK, getErr, "no user found")
-//		return
-//	}
-//
-//	utils.RespondJSON(w, http.StatusOK, users)
-//}
-//
-//func GetAllUsersBySubAdmin(w http.ResponseWriter, r *http.Request) {
-//	userCtx := middlewares.UserContext(r)
-//	loggedUserId := userCtx.UserId
-//
-//	users, getErr := dbHelper.GetAllUsersBySubAdmin(loggedUserId)
-//	if getErr != nil {
-//		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get users")
-//		return
-//	}
-//
-//	if len(users) == 0 {
-//		utils.RespondError(w, http.StatusOK, getErr, "no user found")
-//		return
-//	}
-//
-//	utils.RespondJSON(w, http.StatusOK, users)
-//}
+func GetAllUsersByAdmin(w http.ResponseWriter, _ *http.Request) {
+	users, getErr := dbHelper.GetAllUsersByAdmin()
+
+	if getErr != nil {
+		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get users")
+		return
+	}
+
+	utils.RespondJSON(w, http.StatusOK, users)
+}
+
+func GetAllUsersBySubAdmin(w http.ResponseWriter, r *http.Request) {
+	userCtx := middlewares.UserContext(r)
+	loggedUserID := userCtx.UserID
+
+	users, getErr := dbHelper.GetAllUsersBySubAdmin(loggedUserID)
+	if getErr != nil {
+		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get users")
+		return
+	}
+
+	utils.RespondJSON(w, http.StatusOK, users)
+}

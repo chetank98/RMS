@@ -77,7 +77,8 @@ func GetArchivedAt(sessionID string) (*time.Time, error) {
 
 	SQL := `SELECT archived_at 
               FROM user_session 
-              WHERE id = $1`
+              WHERE id = $1
+              	AND archived_at IS NULL`
 
 	getErr := database.RMS.Get(&archivedAt, SQL, sessionID)
 	return archivedAt, getErr
@@ -93,45 +94,65 @@ func DeleteUserSession(sessionID string) error {
 	return delErr
 }
 
-//func GetAllUsersByAdmin() ([]models.User, error) {
-//	query := `
-//				SELECT u.id,
-//					   u.name,
-//					   u.email,
-//					   a.address,
-//					   ur.role
-//				FROM users u
-//						 INNER JOIN user_roles ur
-//									ON u.id = ur.user_id
-//						 INNER JOIN address a
-//									ON u.id = a.user_id
-//				WHERE u.archived_at IS NULL
-//				  AND ur.role = 'user';
-//			`
-//
-//	users := make([]models.User, 0)
-//	FetchErr := database.RMS.Select(&users, query)
-//	return users, FetchErr
-//}
-//
-//func GetAllUsersBySubAdmin(loggedUserId string) ([]models.User, error) {
-//	query := `
-//				SELECT u.id,
-//					   u.name,
-//					   u.email,
-//					   a.address,
-//					   ur.role
-//				FROM users u
-//						 INNER JOIN user_roles ur
-//									ON u.id = ur.user_id
-//						 INNER JOIN address a
-//									ON u.id = a.user_id
-//				WHERE u.archived_at IS NULL
-//				  AND u.created_by = $1
-//				  AND ur.role = 'user';
-//			`
-//
-//	users := make([]models.User, 0)
-//	FetchErr := database.RMS.Select(&users, query, loggedUserId)
-//	return users, FetchErr
-//}
+func GetAllUsersByAdmin() ([]models.User, error) {
+	SQL := `SELECT id,
+			   name,
+			   email,
+			   role
+			FROM users
+    	      WHERE role = 'user' 
+    	        AND archived_at IS NULL`
+
+	users := make([]models.User, 0)
+	if fetchErr := database.RMS.Select(&users, SQL); fetchErr != nil {
+		return users, fetchErr
+	}
+
+	for i := range users {
+		SQL = `SELECT a.id, 
+    			  a.address,
+			      a.latitude,
+			      a.longitude
+		   FROM address a
+    	     WHERE a.user_id = $1    	         
+    	         AND a.archived_at IS NULL`
+
+		if fetchErr := database.RMS.Select(&users[i].Address, SQL, users[i].ID); fetchErr != nil {
+			return users, fetchErr
+		}
+	}
+
+	return users, nil
+}
+
+func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
+	SQL := `SELECT id,
+			   name,
+			   email,
+			   role
+			FROM users
+    	      WHERE role = 'user'
+    	        AND created_by = $1
+    	        AND archived_at IS NULL`
+
+	users := make([]models.User, 0)
+	if fetchErr := database.RMS.Select(&users, SQL, loggedUserID); fetchErr != nil {
+		return users, fetchErr
+	}
+
+	for i := range users {
+		SQL = `SELECT a.id, 
+    			  a.address,
+			      a.latitude,
+			      a.longitude
+		   FROM address a
+    	     WHERE a.user_id = $1    	         
+    	         AND a.archived_at IS NULL`
+
+		if fetchErr := database.RMS.Select(&users[i].Address, SQL, users[i].ID); fetchErr != nil {
+			return users, fetchErr
+		}
+	}
+
+	return users, nil
+}

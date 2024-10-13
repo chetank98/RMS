@@ -15,19 +15,16 @@ func CreateSubAdmin(name, email, password, createdBy string, role models.Role) e
 }
 
 func GetAllSubAdmins() ([]models.SubAdmin, error) {
-	SQL := `
-				SELECT u.id,
-					   u.name,
-					   u.email,
-					   ur.role
-				FROM users u
-						 INNER JOIN user_roles ur
-									ON u.id = ur.user_id
-				WHERE u.archived_at IS NULL
-				  AND ur.role = 'sub-admin';
-			`
+	SQL := `SELECT id,
+				   name,
+				   email,
+				   role,
+				   created_by
+			FROM users
+				WHERE role = 'sub-admin' 
+				AND archived_at IS NULL`
 
 	subAdmins := make([]models.SubAdmin, 0)
-	FetchErr := database.RMS.Select(&subAdmins, SQL)
-	return subAdmins, FetchErr
+	fetchErr := database.RMS.Select(&subAdmins, SQL)
+	return subAdmins, fetchErr
 }
