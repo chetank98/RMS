@@ -28,12 +28,8 @@ func CreateRestaurant(body models.CreateRestaurantRequest, userID string) error 
 }
 
 func GetAllRestaurants() ([]models.Restaurant, error) {
-	SQL := `SELECT id,
-				   name,
-				   address,
-				   latitude,
-				   longitude,
-				   created_by
+	SQL := `SELECT id, name, address,
+				   latitude, longitude, created_by
 			  FROM restaurants
 				WHERE archived_at IS NULL`
 
@@ -43,12 +39,8 @@ func GetAllRestaurants() ([]models.Restaurant, error) {
 }
 
 func GetAllRestaurantsBySubAdmin(loggedUserID string) ([]models.Restaurant, error) {
-	SQL := `SELECT id,
-				   name,
-				   address,
-				   latitude,
-				   longitude,
-				   created_by
+	SQL := `SELECT id, name, address,
+				   latitude, longitude, created_by
 			  FROM restaurants
 				WHERE created_by = $1
 				    AND archived_at IS NULL`
