@@ -95,10 +95,7 @@ func DeleteUserSession(sessionID string) error {
 }
 
 func GetAllUsersByAdmin() ([]models.User, error) {
-	SQL := `SELECT id,
-			   name,
-			   email,
-			   role
+	SQL := `SELECT id, name, email, role 
 			FROM users
     	      WHERE role = 'user' 
     	        AND archived_at IS NULL`
@@ -108,17 +105,23 @@ func GetAllUsersByAdmin() ([]models.User, error) {
 		return users, fetchErr
 	}
 
-	for i := range users {
-		SQL = `SELECT a.id, 
-    			  a.address,
-			      a.latitude,
-			      a.longitude
-		   FROM address a
-    	     WHERE a.user_id = $1    	         
-    	         AND a.archived_at IS NULL`
+	SQL = `SELECT id, address, latitude, longitude, user_id 
+			FROM address
+    	      WHERE archived_at IS NULL`
 
-		if fetchErr := database.RMS.Select(&users[i].Address, SQL, users[i].ID); fetchErr != nil {
-			return users, fetchErr
+	addresses := make([]models.Address, 0)
+	if fetchErr := database.RMS.Select(&addresses, SQL); fetchErr != nil {
+		return users, fetchErr
+	}
+
+	addressMap := make(map[string][]models.Address)
+	for _, addr := range addresses {
+		addressMap[addr.UserID] = append(addressMap[addr.UserID], addr)
+	}
+
+	for i := range users {
+		if userAddresses, exists := addressMap[users[i].ID]; exists {
+			users[i].Address = userAddresses
 		}
 	}
 
@@ -126,10 +129,7 @@ func GetAllUsersByAdmin() ([]models.User, error) {
 }
 
 func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
-	SQL := `SELECT id,
-			   name,
-			   email,
-			   role
+	SQL := `SELECT id, name, email, role 
 			FROM users
     	      WHERE role = 'user'
     	        AND created_by = $1
@@ -140,17 +140,23 @@ func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
 		return users, fetchErr
 	}
 
-	for i := range users {
-		SQL = `SELECT a.id, 
-    			  a.address,
-			      a.latitude,
-			      a.longitude
-		   FROM address a
-    	     WHERE a.user_id = $1    	         
-    	         AND a.archived_at IS NULL`
+	SQL = `SELECT id, address, latitude, longitude, user_id 
+			FROM address
+    	      WHERE archived_at IS NULL`
 
-		if fetchErr := database.RMS.Select(&users[i].Address, SQL, users[i].ID); fetchErr != nil {
-			return users, fetchErr
+	addresses := make([]models.Address, 0)
+	if fetchErr := database.RMS.Select(&addresses, SQL); fetchErr != nil {
+		return users, fetchErr
+	}
+
+	addressMap := make(map[string][]models.Address)
+	for _, addr := range addresses {
+		addressMap[addr.UserID] = append(addressMap[addr.UserID], addr)
+	}
+
+	for i := range users {
+		if userAddresses, exists := addressMap[users[i].ID]; exists {
+			users[i].Address = userAddresses
 		}
 	}
 

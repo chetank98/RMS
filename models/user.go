@@ -42,6 +42,7 @@ type Address struct {
 	Address   string  `json:"address" db:"address"`
 	Latitude  float64 `json:"latitude" db:"latitude"`
 	Longitude float64 `json:"longitude" db:"longitude"`
+	UserID    string  `json:"userId" db:"user_id"`
 }
 
 type User struct {
