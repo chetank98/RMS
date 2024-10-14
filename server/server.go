@@ -34,6 +34,7 @@ func SetupRoutes() *Server {
 
 			r.Use(middlewares.Authenticate)
 
+			r.Get("/dishes-by-restaurant", handlers.DishesByRestaurant)
 			r.Post("/logout", handlers.LogoutUser)
 
 			r.Route("/admin", func(admin chi.Router) {
@@ -70,6 +71,7 @@ func SetupRoutes() *Server {
 				user.Use(middlewares.ShouldHaveRole(models.RoleUser))
 				user.Get("/all-restaurants", handlers.GetAllRestaurants)
 				user.Get("/all-dishes", handlers.GetAllDishes)
+				user.Get("/calculate-distance", handlers.CalculateDistance)
 			})
 		})
 	})

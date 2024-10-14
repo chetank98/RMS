@@ -46,3 +46,14 @@ func GetAllDishesBySubAdmin(loggedUserID string) ([]models.Dish, error) {
 	fetchErr := database.RMS.Select(&dishes, SQL, loggedUserID)
 	return dishes, fetchErr
 }
+
+func DishesByRestaurant(restaurantID string) ([]models.Dish, error) {
+	SQL := `SELECT id, name, price, restaurant_id
+				FROM dishes
+				WHERE restaurant_id = $1
+				  AND archived_at IS NULL`
+
+	dishes := make([]models.Dish, 0)
+	fetchErr := database.RMS.Select(&dishes, SQL, restaurantID)
+	return dishes, fetchErr
+}

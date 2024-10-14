@@ -26,6 +26,11 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"gte=6,lte=15"`
 }
 
+type DistanceRequest struct {
+	UserAddressID       string `json:"userAddressId" validate:"required"`
+	RestaurantAddressID string `json:"restaurantAddressId" validate:"required"`
+}
+
 type LoginData struct {
 	ID           string `db:"id"`
 	PasswordHash string `db:"password"`
@@ -51,4 +56,9 @@ type UserCtx struct {
 	UserID    string `json:"userId"`
 	SessionID string `json:"sessionId"`
 	Role      Role   `json:"role"`
+}
+
+type Coordinates struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }

@@ -68,3 +68,22 @@ func GetAllDishesBySubAdmin(w http.ResponseWriter, r *http.Request) {
 
 	utils.RespondJSON(w, http.StatusOK, dishes)
 }
+
+func DishesByRestaurant(w http.ResponseWriter, r *http.Request) {
+	body := struct {
+		RestaurantID string `json:"restaurantId" db:"restaurant_id" validate:"required"`
+	}{}
+
+	if parseErr := utils.ParseBody(r.Body, &body); parseErr != nil {
+		utils.RespondError(w, http.StatusBadRequest, parseErr, "failed to parse request body")
+		return
+	}
+
+	dishes, getErr := dbHelper.DishesByRestaurant(body.RestaurantID)
+	if getErr != nil {
+		utils.RespondError(w, http.StatusInternalServerError, getErr, "failed to get dishes")
+		return
+	}
+
+	utils.RespondJSON(w, http.StatusOK, dishes)
+}

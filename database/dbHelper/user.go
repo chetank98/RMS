@@ -156,3 +156,41 @@ func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
 
 	return users, nil
 }
+
+func GetUserCoordinates(userAddressID string) (models.Coordinates, error) {
+	SQL := `SELECT latitude, longitude 
+              FROM address 
+              WHERE id = $1
+              	AND archived_at IS NULL`
+
+	var coordinates models.Coordinates
+	getErr := database.RMS.Get(&coordinates, SQL, userAddressID)
+	return coordinates, getErr
+}
+
+func GetRestaurantCoordinates(restaurantAddressID string) (models.Coordinates, error) {
+	SQL := `SELECT latitude, longitude 
+              FROM restaurants 
+              WHERE id = $1
+              	AND archived_at IS NULL`
+
+	var coordinates models.Coordinates
+	getErr := database.RMS.Get(&coordinates, SQL, restaurantAddressID)
+	return coordinates, getErr
+}
+
+func CalculateDistance(userCoordinates, restaurantCoordinates models.Coordinates) (float64, error) {
+	args := []interface{}{userCoordinates.Latitude, userCoordinates.Longitude,
+		restaurantCoordinates.Latitude, restaurantCoordinates.Longitude}
+
+	SQL := `SELECT ROUND(
+						   (earth_distance(
+									ll_to_earth($1, $2),
+									ll_to_earth($3, $4)
+							) / 1000.0)::numeric, 1
+				   ) AS distance_km`
+
+	var distance float64
+	getErr := database.RMS.Get(&distance, SQL, args...)
+	return distance, getErr
+}
