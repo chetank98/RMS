@@ -131,8 +131,7 @@ func GetAllUsersByAdmin() ([]models.User, error) {
 func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
 	SQL := `SELECT id, name, email, role 
 			FROM users
-    	      WHERE role = 'user'
-    	        AND created_by = $1
+    	      WHERE created_by = $1
     	        AND archived_at IS NULL`
 
 	users := make([]models.User, 0)
@@ -140,12 +139,15 @@ func GetAllUsersBySubAdmin(loggedUserID string) ([]models.User, error) {
 		return users, fetchErr
 	}
 
-	SQL = `SELECT id, address, latitude, longitude, user_id 
-			FROM address
-    	      WHERE archived_at IS NULL`
+	SQL = `SELECT a.id, a.address, a.latitude, a.longitude, a.user_id
+			FROM address a
+					 JOIN users u on a.user_id = u.id
+			WHERE created_by = $1
+			  AND a.archived_at IS NULL
+			  AND u.archived_at IS NULL`
 
 	addresses := make([]models.Address, 0)
-	if fetchErr := database.RMS.Select(&addresses, SQL); fetchErr != nil {
+	if fetchErr := database.RMS.Select(&addresses, SQL, loggedUserID); fetchErr != nil {
 		return users, fetchErr
 	}
 
